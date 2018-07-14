@@ -5,18 +5,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VTSharp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <ScrollViewer Name="terminalScrollback" VerticalScrollBarVisibility="Visible" Cursor="IBeam">
-        <ItemsControl Name="terminalLines" ItemsSource="{Binding Buffer.Lines}">
-            
+        Title="MainWindow" Height="450" Width="800" SizeChanged="Window_SizeChanged" MouseWheel="Window_MouseWheel">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Name="viewPortCol"/>
+            <ColumnDefinition MaxWidth="{Binding Path=ActualWidth, ElementName=scrollBar}" />
+        </Grid.ColumnDefinitions>
+        <ItemsControl Name="terminalLines" ItemsSource="{Binding Buffer.Viewable}" Grid.Column="0">
+
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <ItemsControl ItemsSource="{Binding Sequences}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Background="{Binding BackgroundColor}">
-                                    
-                                <Glyphs
+
+                                    <Glyphs
                                 FontUri="{Binding   
                                            Path=DataContext.FontUri,   
                                            RelativeSource={RelativeSource AncestorLevel=2, AncestorType=ItemsControl},
@@ -47,5 +51,6 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-    </ScrollViewer>
+        <ScrollBar Name="scrollBar" Grid.Column="1" Scroll="scrollBar_Scroll"></ScrollBar>
+    </Grid>
 </Window>
