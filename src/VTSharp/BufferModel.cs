@@ -13,6 +13,8 @@ namespace VTSharp
         private int width;
         private int height;
         private int viewStartLine = 0;
+        private string BackgroundColor = "Transparent";
+        private string Color = "Black";
 
         public BufferModel(int width, int height)
         {
@@ -41,16 +43,23 @@ namespace VTSharp
 
         public void Scroll(int startLine)
         {
-            this.viewStartLine = startLine;
-            RecalculateViewable();
+            if (this.viewStartLine != startLine)
+            {
+                this.viewStartLine = startLine;
+                RecalculateViewable();
+            }
         }
 
         public void SetDimensions(int width, int height)
         {
-            this.width = width;
-            this.height = height;
-            RecalculateLines();
-            RecalculateViewable();
+            if (this.width != width
+                || this.height != height)
+            {
+                this.width = width;
+                this.height = height;
+                RecalculateLines();
+                RecalculateViewable();
+            }
         }
 
         private void RecalculateLines()
@@ -98,11 +107,22 @@ namespace VTSharp
         {
             var watch = new Stopwatch();
             watch.Start();
-            this.Viewable.Clear();
+
+            var newView = new ObservableCollection<Line>();
             for (int i = 0; i < this.height && i < this.Lines.Count; i++)
             {
-                this.Viewable.Add(this.Lines[i + this.viewStartLine]);
+                newView.Add(this.Lines[i + this.viewStartLine]);
             }
+            
+            if (!newView.SequenceEqual(this.Viewable))
+            {
+                this.Viewable.Clear();
+                foreach(var line in newView)
+                {
+                    this.Viewable.Add(line);
+                }
+            }
+
             Trace.WriteLine(watch.Elapsed);
         }
     }
@@ -127,10 +147,29 @@ namespace VTSharp
             set;
         }
 
+        public override bool Equals(object obj)
+        {
+            var sequence = obj as Sequence;
+            return sequence != null &&
+                   BackgroundColor == sequence.BackgroundColor &&
+                   Color == sequence.Color &&
+                   Text == sequence.Text;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -49602234;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(BackgroundColor);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Color);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Text);
+            return hashCode;
+        }
+
         public void Prepend(Sequence sequence)
         {
             this.Text = string.Concat(sequence.Text, this.Text);
         }
+
         public Sequence[] SplitAt(int location)
         {
             var before = new Sequence
@@ -164,6 +203,22 @@ namespace VTSharp
         }
 
         public int Length => this.Sequences.Select(sequence => sequence.Text.Length).Sum();
+
+        public override bool Equals(object obj)
+        {
+            var line = obj as Line;
+            return line != null &&
+                   EqualityComparer<List<Sequence>>.Default.Equals(Sequences, line.Sequences) &&
+                   BreakType == line.BreakType;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = -571092039;
+            hashCode = hashCode * -1521134295 + EqualityComparer<List<Sequence>>.Default.GetHashCode(Sequences);
+            hashCode = hashCode * -1521134295 + BreakType.GetHashCode();
+            return hashCode;
+        }
 
         public void Prepend(Line line)
         {
